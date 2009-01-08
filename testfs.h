@@ -1,3 +1,11 @@
+/***********************************************************/
+/*  This is the readme for the testfs filesystem           */
+/*  Author : Manish Katiyar <mkatiyar@gmail.com>           */
+/*  Description : A simple disk based filesystem for linux */
+/*  Date   : 08/01/09                                      */
+/*  Version : 0.01                                         */
+/*  Distributed under GPL                                  */
+/***********************************************************/
 #ifndef __TEST_FS__ 
 #define __TEST_FS__ 
 

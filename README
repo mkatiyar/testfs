@@ -1,0 +1,55 @@
+/***********************************************************/
+/*  This is the readme for the testfs filesystem           */
+/*  Author : Manish Katiyar <mkatiyar@gmail.com>           */
+/*  Description : A simple disk based filesystem for linux */
+/*  Date   : 08/01/09                                      */
+/*  Version : 0.01                                         */
+/*  Distributed under GPL                                  */
+/***********************************************************/
+
+Testfs is based on minix/ext2 filesystem and most of the code,logic, structures have been
+duplicated from them. I started writing this fs just for fun and to learn linux
+filesystems. Feel free to modify if you wish.
+
+About testfs :
+--------------
+
+Testfs has a very simple layout on disk. Currently I plan to have limitation on the size of
+files and directories. Inorder to keep things simple at start I don't do any special allocation
+for blocks. Each inode has a fixed block number where it should look for its data and that is
+its inode number. So an inode number of 6 will have its data in the 6th block of filesystem. And
+that is the reason I have a limit that no file can grow more than the blocksize. If you try to write
+more than that you should be getting an ENOSPC error.
+
+Inode blocks span over 3 blocks in our filesystem and start from the 3rd block ie... 3rd, 4th and 5th 
+blocks are reserved for the inode table. So the maximum number of inodes we can have in the filesystem
+is (3*blocksize)/(size of inode).
+
+0th block in testfs is free, superblock resides at the first block. And block number 1, holds the inode
+bitmap.
+Inode allocation block and block allocation map are same because once you reserve an inode, you automatically
+also reserve the block because of the 1:1 mapping between them.
+
+So the overall layout looks something like below :
+
+______________________________________ _ _ _ _ _ _ _ _ ________________________
+|       |        |      |      |     |       |         |        |       | 
+|  0    |   1    |  2   |  3   |  4  |  5    |    6    |   7    |   8   | 
+|       |        |      |      |     |       |         |        |       | ---->  blocks  
+|_______|________|______|______|_____|_ _ _ _|_ _ _ _ _|________|_______|_______
+    ^       ^        ^   <----- -^---------->     ^        ^
+ Free    superblock inode     inode table      root dir   1st user
+ block              bitmap      block                      file
+
+
+Directory entry layout of the testfs is exactly same as ext2 except that fact that I haven't optimised
+on size of fields and all of them are 4 byte aligned. The max name length of a file that testfs can
+support is based on TESTFS_MAX_NAME_LEN which is 12 currently.
+
+Some fields :
+
+sb_first_nonmeta_inode : This is a #defined value which is the first inode number any file
+can have in our filesystem. ie... All the inodes below are reserved and should not ever appear
+in the fs listing.
+
+Feel free to play and learn with testfs. Send any bugs/queries to mkatiyar@gmail.com !!!
