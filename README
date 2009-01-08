@@ -52,4 +52,28 @@ sb_first_nonmeta_inode : This is a #defined value which is the first inode numbe
 can have in our filesystem. ie... All the inodes below are reserved and should not ever appear
 in the fs listing.
 
+How to Use :
+-------------
+
+Inorder to test and use testfs do the following steps.
+
+a) Compile util/mktestfs.c. Just a "gcc -o mktestfs mktestfs.c" from util directory will work.
+b) Create an empty directory where you need to test. "mkdir testdir"
+c) Create an empty file . "cd testdir;dd if=/dev/zero of=mytestfile bs=4096 count=30"
+d) Create "testfs" filesystem on mytestfile". Run "mktestfs" and give argument as mytestfile when it asks
+for a filename.
+e) Compile testfs source code with your kernel source. I do it with my UML . Change the pathname in Makefile
+appropriately. If you don't want debug messages to be flooded on your screen you can change the build flags,
+but probably you should keep it so that you know what is happening if you are using testfs for learning.
+f) Inser the testfs module. As root do "insmod testfs.ko"
+g) You should see an entry for testfs in "lsmod"
+h) Go to testdir and create a directory "cd testdir;mkdir mnt"
+i) Mount testfs over mnt. " mount -t testfs mytestfile mnt"
+j) Verify that it has been mounted using "mount"
+
+k) Now you can go into mnt and try to do some fs operations like creating, deleting file etc. Not all the operations
+are supported currently so you might get errors.
+l) You can also see testfs inode cache utilization by doing "cat /proc/slabinfo|grep testfs"
+l) After that unmount the mnt directory and do a "rmmod testfs.ko" to unregister testfs filesystem.
+
 Feel free to play and learn with testfs. Send any bugs/queries to mkatiyar@gmail.com !!!
