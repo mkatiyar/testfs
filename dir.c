@@ -1,4 +1,5 @@
 /***********************************************************/
+/*  This is the readme for the testfs filesystem           */
 /*  Author : Manish Katiyar <mkatiyar@gmail.com>           */
 /*  Description : A simple disk based filesystem for linux */
 /*  Date   : 08/01/09                                      */
@@ -91,7 +92,10 @@ static int testfs_commit_chunk(struct page *page, loff_t pos, unsigned len)
 		i_size_write(dir, pos+len);
 		mark_inode_dirty(dir);
 	}
+	//unlock_page(page);
 	err = write_one_page(page,1);
+	if (!err)
+	err = testfs_write_inode(dir,1);
 	return err;
 }
 

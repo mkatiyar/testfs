@@ -1,4 +1,5 @@
 /***********************************************************/
+/*  This is the readme for the testfs filesystem           */
 /*  Author : Manish Katiyar <mkatiyar@gmail.com>           */
 /*  Description : A simple disk based filesystem for linux */
 /*  Date   : 08/01/09                                      */
@@ -179,11 +180,14 @@ extern int testfs_permission(struct inode *inode, int mask);
 
 /* ialloc.c */
 extern struct inode *testfs_new_inode(struct inode *dir, int mode);
+extern void testfs_free_inode (struct inode *inode);
 
 /* inode.c */
 int __testfs_write_begin(struct file *file, struct address_space *mapping,
 		loff_t pos, unsigned len, unsigned flags, struct page **pagep,
 		void **fsdata);
+int testfs_write_inode(struct inode *inode, int wait);
+void testfs_delete_inode(struct inode *inode);
 /* dir.c */
 extern unsigned int testfs_inode_by_name(struct inode *dir, struct qstr *child);
 extern int testfs_add_link(struct dentry *, struct inode *);
