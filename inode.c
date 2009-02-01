@@ -258,7 +258,7 @@ static int testfs_update_inode(struct inode *inode)
 		return -EIO;
 
 	/* Update the fields of on disk inode with those from memory */
-	testfs_debug("Inode (%lu) size = %lld , mode = 0x%x\n",inode->i_ino, inode->i_size, inode->i_mode);
+	testfs_debug("Inode (%u) size = %lld , mode = 0x%x\n",inode->i_ino, inode->i_size, inode->i_mode);
 	raw->size = cpu_to_le32(inode->i_size);
 	raw->atime = (inode->i_atime);
 	raw->mtime = (inode->i_mtime);
@@ -282,7 +282,6 @@ static int testfs_update_inode(struct inode *inode)
 
 void testfs_delete_inode(struct inode *inode)
 {
-	testfs_debug("Deleting inode (%lu)\n",inode->i_ino);
 	if(is_bad_inode(inode))
 		goto no_delete;
 	mark_inode_dirty(inode);
