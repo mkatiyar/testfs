@@ -1,4 +1,4 @@
-/***********************************************************/
+/**********************************************************/
 /*  This is the readme for the testfs filesystem           */
 /*  Author : Manish Katiyar <mkatiyar@gmail.com>           */
 /*  Description : A simple disk based filesystem for linux */
@@ -258,7 +258,7 @@ static int testfs_update_inode(struct inode *inode)
 		return -EIO;
 
 	/* Update the fields of on disk inode with those from memory */
-	testfs_debug("Incore size = %lld , mode = 0x%x\n",inode->i_size, inode->i_mode);
+	testfs_debug("Inode (%lu) size = %lld , mode = 0x%x\n",inode->i_ino, inode->i_size, inode->i_mode);
 	raw->size = cpu_to_le32(inode->i_size);
 	raw->atime = (inode->i_atime);
 	raw->mtime = (inode->i_mtime);
@@ -267,6 +267,7 @@ static int testfs_update_inode(struct inode *inode)
 	raw->gid = cpu_to_le32(inode->i_gid);
 	raw->uid = cpu_to_le32(inode->i_uid);
 	raw->type = cpu_to_le32(inode->i_mode);
+	testfs_debug("Data block = %u\n",tsi->i_data[0]);
 	raw->data[0] = tsi->i_data[0];
 
 	mark_buffer_dirty(bh);
@@ -277,6 +278,20 @@ static int testfs_update_inode(struct inode *inode)
 	}
 	brelse(bh);
 	return err;
+}
+
+void testfs_delete_inode(struct inode *inode)
+{
+	testfs_debug("Deleting inode (%lu)\n",inode->i_ino);
+	if(is_bad_inode(inode))
+		goto no_delete;
+	mark_inode_dirty(inode);
+	testfs_update_inode(inode);
+	inode->i_size = 0;
+	testfs_free_inode(inode);
+	return;
+no_delete:
+	clear_inode(inode);
 }
 
 int testfs_write_inode(struct inode *inode, int wait)

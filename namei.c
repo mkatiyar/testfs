@@ -17,9 +17,11 @@ static int testfs_add_dentry(struct dentry *dentry, struct inode *inode)
 		 * Attach the negative dentry with the inode
 		 */
 		d_instantiate(dentry, inode);
+		unlock_new_inode(inode);
 		return 0;
 	}
 	inode_dec_link_count(inode);
+	unlock_new_inode(inode);
 	iput(inode);
 	return err;
 }
@@ -69,11 +71,33 @@ static struct dentry *testfs_lookup(struct inode *dir, struct dentry *dentry, st
 	return d_splice_alias(inode, dentry);
 }
 
+static int testfs_unlink(struct inode *dir, struct dentry *dentry)
+{
+	struct inode *inode = dentry->d_inode;
+	struct testfs_dir_entry *de;
+	struct page *page;
+	int err = -ENOENT;
+
+	testfs_debug("Deleting file \"%s\"\n",dentry->d_name.name);
+	de = testfs_find_dentry(dir, &dentry->d_name, &page);
+	if (!de) {
+		testfs_debug("Unable to find requested filename\n");
+		goto out;
+	}
+
+	err = testfs_delete_entry(de, page);
+	if (err) {
+		goto out;
+	}
+	inode_dec_link_count(inode);
+out:
+	return err;
+}
 const struct inode_operations testfs_dir_inode_operations = {
 	.create = testfs_create,
 	.lookup = testfs_lookup,
 	//.link = testfs_link,
-	//.unlink = testfs_unlink,
+	.unlink = testfs_unlink,
         //.mkdir = testfs_mkdir,
 	//.rmdir = testfs_rmdir,
 	//.rename = testfs_rename,

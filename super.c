@@ -74,6 +74,8 @@ static void testfs_destroy_inode(struct inode *inode)
 }
 static const struct super_operations testfs_sops = {
 	.alloc_inode   = testfs_alloc_inode,
+	.write_inode   = testfs_write_inode,
+	.delete_inode  = testfs_delete_inode,
 	.destroy_inode = testfs_destroy_inode,
 	.put_super     = testfs_put_super,
 	.write_super   = testfs_write_super,

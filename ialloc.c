@@ -107,6 +107,7 @@ void testfs_free_inode(struct inode *inode)
 		testfs_error("Invalid inode number to be freed %u\n",ino);
 		goto error_return;
 	}
+	clear_inode(inode);
 	bitmap_bh = read_inode_bitmap(sb);
 	if (inode_already_freed(bitmap_bh->b_data, ino)) {
 		testfs_error("Inode already free %u\n",ino);

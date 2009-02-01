@@ -92,7 +92,10 @@ static int testfs_commit_chunk(struct page *page, loff_t pos, unsigned len)
 		i_size_write(dir, pos+len);
 		mark_inode_dirty(dir);
 	}
+	//unlock_page(page);
 	err = write_one_page(page,1);
+	if (!err)
+	err = testfs_write_inode(dir,1);
 	return err;
 }
 
@@ -157,7 +160,9 @@ int testfs_add_link(struct dentry *dentry, struct inode *inode)
 			if (testfs_match(namelen, name, de))
 				/* Entry already exists */
 				goto page_unlock;
+
 			rec_len = de->rec_len;
+			/* This can be different from above if this is the last entry */
 			name_len = calc_reclen_from_len(de->name_len);
 
 			if(!de->inode && rec_len >= reclen) {
@@ -275,6 +280,7 @@ struct testfs_dir_entry *testfs_find_dentry(struct inode *dir,
 	struct page *page;
 	char *kaddr = NULL, *limit;
 
+	testfs_debug("Trying to find \"%s\" in dir ino (%u)\n",child->name, dir->i_ino);
 	for (n=0;n<=pages;n++) {
 		page = testfs_get_page(dir, n);
 		if (IS_ERR(page)) {
@@ -291,6 +297,7 @@ struct testfs_dir_entry *testfs_find_dentry(struct inode *dir,
 				return -EIO;
 			}
 			if (testfs_match(child->len, child->name, de)) {
+				*respage = page;
 				return de;
 			}
 		}
@@ -313,6 +320,37 @@ unsigned int testfs_inode_by_name(struct inode *dir, struct qstr *child)
 		testfs_put_page(page);
 	}
 	return ino;
+}
+
+int testfs_delete_entry (struct testfs_dir_entry *dir, struct page *page)
+{
+	struct testfs_dir_entry *old, *cur;
+	char *kaddr = page_address(page);
+	int err = -ENOENT;
+	struct address_space *mapping = page->mapping;
+	struct inode *inode = mapping->host;
+	int pos, from = (((char *)dir) - kaddr) & ~(inode->i_sb->s_blocksize - 1);
+	int to = (((char *)dir) - kaddr) + calc_reclen_from_len(dir->name_len);
+	old = cur= (struct testfs_dir_entry *)kaddr;
+	testfs_debug("here\n");
+	for (;cur < dir;cur= (char *)cur+ cur->rec_len) {
+		testfs_debug("ino (%lu - %s)\n",cur->inode, cur->name);
+		old = cur;
+	}
+	if ((char *)cur!= kaddr) {
+		/* This is not the first entry on page */
+		old->rec_len += cur->rec_len;
+		cur->inode = 0;
+	}
+	pos = page_offset(page) + from;
+	lock_page(page);
+	err = __testfs_write_begin(NULL, mapping, pos, to - from, 0,
+						&page, NULL);
+
+	err = testfs_commit_chunk(page, pos, to - from);
+	mark_inode_dirty(inode);
+	testfs_put_page(page);
+	return err;
 }
 
 const struct file_operations testfs_dir_operations = {
