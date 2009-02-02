@@ -139,13 +139,13 @@ enum {
 
 #ifdef __KERNEL__
 #define testfs_error(f, a...) { \
-	printk(KERN_CRIT "TESTFS-Debug (%s, %d) : %s:", \
+	printk(KERN_CRIT "TESTFS-Error (%s, %d) : %s:", \
 			__FILE__,__LINE__,__func__); \
 	printk(f,##a); \
 }
 #else
 #define testfs_error(f, a...) { \
-	fprintf(stderr, "TESTFS-Debug (%s, %d) : %s:", \
+	fprintf(stderr, "TESTFS-Error (%s, %d) : %s:", \
 			__FILE__,__LINE__,__func__); \
 	fprintf(stderr, f,##a); \
 }
