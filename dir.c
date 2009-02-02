@@ -218,8 +218,6 @@ static int testfs_readdir(struct file *filep, void *dirent, filldir_t filldir)
 	loff_t pos = filep->f_pos;
 	struct inode *inode = filep->f_path.dentry->d_inode;
 	unsigned int offset = pos & ~PAGE_CACHE_MASK;
-	struct testfs_dir_entry *de ;
-	struct super_block *sb = inode->i_sb;
 	unsigned long pages = testfs_inode_pages(inode); /* Total number of pages to iterate */
 	unsigned n = pos >> PAGE_CACHE_SHIFT; /* Page from where we have to start iterating */
 	if (pos > inode->i_size) /* We have crossed our inode size */
@@ -233,7 +231,7 @@ static int testfs_readdir(struct file *filep, void *dirent, filldir_t filldir)
 		struct testfs_dir_entry *de;
 		struct page *page = testfs_get_page(inode, n);
 		if (IS_ERR(page)) {
-			testfs_error("Bad page (%u) found in inode %u\n",n ,inode->i_ino);
+			testfs_error("Bad page (%u) found in inode %lu\n",n ,inode->i_ino);
 			filep->f_pos += PAGE_CACHE_SIZE - offset; /* Increment the pointer */
 			return PTR_ERR(page);
 		}
@@ -248,7 +246,7 @@ static int testfs_readdir(struct file *filep, void *dirent, filldir_t filldir)
 		 * of the check de<=limit in for loop.
 		 */
 		limit = kaddr + testfs_last_byte_for_page(inode, n) - calc_reclen_from_len(1);
-		for (; (char *)de <= limit; de = ((char *)de + de->rec_len)) {
+		for (; (char *)de <= limit; de = (struct testfs_dir_entry *)((char *)de + de->rec_len)) {
 			if (!de->rec_len) {
 				testfs_error("Zero length rec_len for inode (%d) \"%s\"\n", de->inode, de->name);
 				testfs_put_page(page);
@@ -284,17 +282,17 @@ struct testfs_dir_entry *testfs_find_dentry(struct inode *dir,
 	for (n=0;n<=pages;n++) {
 		page = testfs_get_page(dir, n);
 		if (IS_ERR(page)) {
-			testfs_error("Error reading page# (%d) of inode %u\n", n, dir->i_ino);
-			return -EIO;
+			testfs_error("Error reading page# (%d) of inode %lu\n", n, dir->i_ino);
+			goto out;
 		}
 		kaddr = page_address(page);
 		limit = kaddr + testfs_last_byte_for_page(dir, n);
 		de = (struct testfs_dir_entry *)kaddr;
-		for (;(char *)de <= limit ; de = ((char *)de + de->rec_len)) {
+		for (;(char *)de <= limit ; de = (struct testfs_dir_entry *)((char *)de + de->rec_len)) {
 			if (!de->rec_len) {
 				testfs_error("Zero length rec_len for inode (%d) \"%s\"\n", de->inode, de->name);
 				testfs_put_page(page);
-				return -EIO;
+				goto out;
 			}
 			if (testfs_match(child->len, child->name, de)) {
 				*respage = page;
@@ -302,6 +300,7 @@ struct testfs_dir_entry *testfs_find_dentry(struct inode *dir,
 			}
 		}
 	}
+out:
 	return NULL;
 }
 
@@ -333,7 +332,7 @@ int testfs_delete_entry (struct testfs_dir_entry *dir, struct page *page)
 	int to = (((char *)dir) - kaddr) + calc_reclen_from_len(dir->name_len);
 	old = cur= (struct testfs_dir_entry *)kaddr;
 	testfs_debug("here\n");
-	for (;cur < dir;cur= (char *)cur+ cur->rec_len) {
+	for (;cur < dir;cur= (struct testfs_dir_entry *)((char *)cur+ cur->rec_len)) {
 		testfs_debug("ino (%lu - %s)\n",cur->inode, cur->name);
 		old = cur;
 	}
