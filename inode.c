@@ -236,7 +236,9 @@ int testfs_write_begin(struct file *file, struct address_space *mapping,
 	struct inode *inode = file->f_path.dentry->d_inode;
 	*pagep = NULL;
 	testfs_debug("filesize = %lld, pos = %lld, len = %u\n",inode->i_size, pos, len);
-	return __testfs_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
+	if ((pos + len) <= inode->i_sb->s_blocksize)
+		return __testfs_write_begin(file, mapping, pos, len, flags, pagep, fsdata);
+	else return -ENOSPC;
 }
 
 static int testfs_writepage(struct page *page, struct writeback_control *wbc)
