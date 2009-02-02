@@ -1,0 +1,11 @@
+*.o
+*.ko
+*.cmd
+*.mod.c
+*.mod.o
+[Mm]odule*
+.tmp_versions/*
+.tmp_versions
+util/testfs
+util/mnt
+util/a.out
