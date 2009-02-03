@@ -288,7 +288,7 @@ struct testfs_dir_entry *testfs_find_dentry(struct inode *dir,
 		kaddr = page_address(page);
 		limit = kaddr + testfs_last_byte_for_page(dir, n);
 		de = (struct testfs_dir_entry *)kaddr;
-		for (;(char *)de <= limit ; de = (struct testfs_dir_entry *)((char *)de + de->rec_len)) {
+		for (;(char *)de < limit ; de = (struct testfs_dir_entry *)((char *)de + de->rec_len)) {
 			if (!de->rec_len) {
 				testfs_error("Zero length rec_len for inode (%d) \"%s\"\n", de->inode, de->name);
 				testfs_put_page(page);
