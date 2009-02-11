@@ -93,14 +93,51 @@ static int testfs_unlink(struct inode *dir, struct dentry *dentry)
 out:
 	return err;
 }
+
+static int testfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
+{
+	int err;
+	struct super_block *sb = dir->i_sb;
+	int len = strlen(symname) + 1;
+	struct inode *inode;
+	if (len > sb->s_blocksize) {
+		err = -ENAMETOOLONG;
+	       goto out;	
+	}
+	inode = testfs_new_inode(dir, S_IFLNK|S_IRWXUGO);
+	err = PTR_ERR(inode);
+	if(IS_ERR(inode)) {
+		testfs_error("Error creating new inode errno = %d\n", err);
+		goto out;
+	}
+
+	/* Assign the required function pointers to the new symlink inode */
+	inode->i_op = &testfs_symlink_inode_operations;
+	inode->i_mapping->a_ops =  &testfs_aops;
+	err = page_symlink(inode, symname, len);
+	if(err)
+		goto out_fail;
+
+	mark_inode_dirty(inode);
+	err = testfs_add_dentry(dentry, inode);
+out:
+	return err;
+out_fail:
+	inode_dec_link_count(inode);
+	unlock_new_inode(inode);
+	iput(inode);
+	return err;
+}
+
 const struct inode_operations testfs_dir_inode_operations = {
 	.create = testfs_create,
 	.lookup = testfs_lookup,
 	//.link = testfs_link,
 	.unlink = testfs_unlink,
-        //.mkdir = testfs_mkdir,
+	//.mkdir = testfs_mkdir,
 	//.rmdir = testfs_rmdir,
 	//.rename = testfs_rename,
-	  .setattr = testfs_setattr,
-	  .permission = testfs_permission,
+	.symlink = testfs_symlink,
+	.setattr = testfs_setattr,
+	.permission = testfs_permission,
 };

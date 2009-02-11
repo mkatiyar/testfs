@@ -9,6 +9,14 @@
 #include<linux/fs.h>
 #include "testfs.h"
 
+/*
+static void *testfs_followlink(struct dentry *dentry , struct nameidata *nd)
+{
+	struct testfs_inode_info *tsi = TESTFS_I(dentry->d_inode);
+}
+*/
+
 const struct inode_operations testfs_symlink_inode_operations = {
 	.readlink = generic_readlink,
+	.follow_link = page_follow_link_light,
 };
